@@ -7,10 +7,11 @@ use serde_json::Value;
 use std::os::raw::c_void;
 use arrow::array::ArrayRef;
 use arrow::record_batch::RecordBatch;
-use arrow::{array::{Int64Array, BooleanArray}, ipc::{self, reader::StreamReader}};
-use arrow::datatypes::Int64Type;
+use arrow::{array::{Int64Array, BooleanArray, PrimitiveArray}, ipc::{self, reader::StreamReader}};
+use arrow::datatypes::{Int64Type, Field, Schema, DataType};
 use arrow::compute::kernels::filter::filter_record_batch;
 use arrow::compute::kernels::comparison::{eq_scalar, neq_scalar, gt_scalar, gt_eq_scalar, lt_scalar, lt_eq_scalar};
+use arrow::compute::unary;
 
 #[derive(Debug)]
 pub struct Pointer<Kind> {
@@ -106,6 +107,32 @@ pub fn transform_record_batch(record_in: RecordBatch, filter_col: &str, filter_v
     transformed_record
 }
 
+pub fn transform_record_batch2(record_in: RecordBatch) -> RecordBatch {
+    let input = record_in;
+    // let _ = print_batches(&[input]);
+    let col_a = input.column(0).as_any().downcast_ref::<Int64Array>().unwrap();
+    // println!("col a {:?}", col_a);
+    
+    let col_b = input.column(1).as_any().downcast_ref::<Int64Array>().unwrap();   
+    let negated_a = arrow::compute::negate(col_a).unwrap();
+    let zero_b: PrimitiveArray<Int64Type> = unary(col_b, |x| 0);
+    
+    
+    let projected_schema = Schema::new(vec![
+        Field::new("a", DataType::Int64, false),
+        Field::new("b", DataType::Int64, false),
+    ]);
+
+    let result = RecordBatch::try_new(
+        Arc::new(projected_schema),
+        vec![
+            Arc::new(negated_a),
+            Arc::new(zero_b),
+        ],
+    );
+    result.unwrap()
+}
+
 #[no_mangle]
 pub fn create_tuple_ptr(elem1: i64, elem2: i64) -> i64 {
     let ret_tuple = Tuple(elem1, elem2);
@@ -117,17 +144,25 @@ pub fn create_tuple_ptr(elem1: i64, elem2: i64) -> i64 {
 
 #[no_mangle]
 pub fn read_transform_write_from_bytes(bytes_ptr: i64, bytes_len: i64, conf_address: i64, conf_size: i64) -> i64 {
-    // Read the memory block of the configuration and convert it to bytes array
-    let conf_bytes_array: Vec<u8> = unsafe{ Vec::from_raw_parts(conf_address as *mut _, conf_size as usize, conf_size as usize) };
-    // Convert the byte array to a Json Strong 
-    let json_str = std::str::from_utf8(&conf_bytes_array).unwrap();
-    let json: Value = serde_json::from_str(json_str).unwrap();
-    // Parse the Json to get the expected arguments
-    let filter_col = json["column"].as_str().unwrap();
-    let filter_op = json["op"].as_str().unwrap();
-    let filter_val = json["value"].as_i64().unwrap();
-    mem::forget(conf_bytes_array);
-
+    let mut filter_col = "a";
+    let mut filter_op = ">";
+    let mut filter_val = 1000;
+    if conf_size == 0 {
+        filter_col = "a";
+        filter_op = ">";
+        filter_val = 18;
+    }// else {
+    //     // Read the memory block of the configuration and convert it to bytes array
+    //     let conf_bytes_array: Vec<u8> = unsafe{ Vec::from_raw_parts(conf_address as *mut _, conf_size as usize, conf_size as usize) };
+    //     // Convert the byte array to a Json Strong 
+    //     let json_str = std::str::from_utf8(&conf_bytes_array).unwrap();
+    //     let json: Value = serde_json::from_str(json_str).unwrap();
+    //     // Parse the Json to get the expected arguments
+    //     filter_col = json["column"].as_str().unwrap();
+    //     filter_op = json["op"].as_str().unwrap();
+    //     filter_val = json["value"].as_i64().unwrap();
+    //     mem::forget(conf_bytes_array);
+    // }
     // Read the byte array in the given address and length
     let bytes_array: Vec<u8> = unsafe{ Vec::from_raw_parts(bytes_ptr as *mut _, bytes_len as usize, bytes_len as usize) };
     let cursor = Cursor::new(bytes_array);
@@ -136,8 +171,9 @@ pub fn read_transform_write_from_bytes(bytes_ptr: i64, bytes_len: i64, conf_addr
     reader.for_each(|batch| {
         let batch = batch.unwrap();
         // Transform the record batch
-        let transformed = transform_record_batch(batch, filter_col, filter_val, filter_op);
-
+        // let transformed = transform_record_batch(batch, filter_col, filter_val, filter_op);
+        let transformed = transform_record_batch2(batch);
+        // println!("transformed = {:?}", transformed);
         // Write the transformed record batch uing IPC
         let schema = transformed.schema();
         let vec = Vec::new();

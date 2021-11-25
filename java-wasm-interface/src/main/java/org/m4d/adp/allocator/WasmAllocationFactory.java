@@ -14,8 +14,13 @@ public class WasmAllocationFactory implements AllocationManager.Factory, AutoClo
     private long instancePtr;
 
     public WasmAllocationFactory(String wasmImage) {
-        System.out.println("wasmallocationfactory");
-        instancePtr = AllocatorInterface.wasmInstance(wasmImage);
+        System.out.println("wasmallocationfactory" + wasmImage);
+        if(wasmImage == null || wasmImage.length() == 0) {
+            instancePtr = AllocatorInterface.wasmInstance("ghcr.io/the-mesh-for-data/alloc-transform:v1");
+        }
+        else {
+            instancePtr = AllocatorInterface.wasmInstance(wasmImage);
+        }
     }
 
     public WasmAllocationFactory() {

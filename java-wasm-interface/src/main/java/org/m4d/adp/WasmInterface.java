@@ -16,11 +16,12 @@ public class WasmInterface {
     private static Logger logger = LoggerFactory.getLogger(WasmInterface.class);
     
     static {
-        try {
-            NativeLoader.loadLibrary("wasm_interface");
-        } catch (IOException e) {
-            logger.error("WasmInterface failed to load wasm_interface library: " + e.getMessage());
-        }
+        // try {
+            // NativeLoader.loadLibrary("wasm_interface");
+            System.loadLibrary("wasm_interface");
+        // } catch (IOException e) {
+            // logger.error("WasmInterface failed to load wasm_interface library: " + e.getMessage());
+        // }
         LOADED_EMBEDDED_LIBRARY = true;
     }
 }

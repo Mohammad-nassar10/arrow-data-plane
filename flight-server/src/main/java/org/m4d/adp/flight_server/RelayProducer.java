@@ -99,19 +99,23 @@ public class RelayProducer extends NoOpFlightProducer implements AutoCloseable {
         long wasm_mem_address = AllocatorInterface.wasmMemPtr(instance_ptr);
         ByteBuffer buffer = MemoryUtil.directBuffer(allocatedAddress + wasm_mem_address, size);
         buffer.put(recordBatchByteArray, 0, size);
-
-        // Allocate a block in wasm memory and copy the configuration to this block
-        byte[] confBytes = this.transformConf.getBytes();
-        int confSize = confBytes.length;
-        long confAllocatedAddress = AllocatorInterface.wasmAlloc(instance_ptr, confSize);
-        wasm_mem_address = AllocatorInterface.wasmMemPtr(instance_ptr);
-        buffer = MemoryUtil.directBuffer(confAllocatedAddress + wasm_mem_address, confSize);
-        buffer.put(confBytes, 0, confSize);
-        // Transform the vector schema root that is represented as a byte array in
-        // `allocatedAddress` memory address with length `size`
-        // The function returns a tuple of `(address, lenght)` of as byte array that
-        // represents the transformed vector schema root
-        long transformed_bytes_tuple = TransformInterface.TransformationIPC(instance_ptr, allocatedAddress, size, confAllocatedAddress, confSize); 
+        long transformed_bytes_tuple = 0;
+        if(this.transformConf != null) {
+            // Allocate a block in wasm memory and copy the configuration to this block
+            byte[] confBytes = this.transformConf.getBytes();
+            int confSize = confBytes.length;
+            long confAllocatedAddress = AllocatorInterface.wasmAlloc(instance_ptr, confSize);
+            wasm_mem_address = AllocatorInterface.wasmMemPtr(instance_ptr);
+            buffer = MemoryUtil.directBuffer(confAllocatedAddress + wasm_mem_address, confSize);
+            buffer.put(confBytes, 0, confSize);
+            // Transform the vector schema root that is represented as a byte array in
+            // `allocatedAddress` memory address with length `size`
+            // The function returns a tuple of `(address, lenght)` of as byte array that
+            // represents the transformed vector schema root
+            transformed_bytes_tuple = TransformInterface.TransformationIPC(instance_ptr, allocatedAddress, size, confAllocatedAddress, confSize);
+        } else {
+            transformed_bytes_tuple = TransformInterface.TransformationIPC(instance_ptr, allocatedAddress, size, 0, 0);
+        }
 
         // Get the byte array from the memory address
         long transformed_bytes_address = TransformInterface.GetFirstElemOfTuple(instance_ptr, transformed_bytes_tuple);
@@ -226,7 +230,7 @@ public class RelayProducer extends NoOpFlightProducer implements AutoCloseable {
         ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> request = new HashMap<String, Object>();
         System.out.println("dataset name = " + datasetName);
-        request.put("asset", datasetName);
+        request.put("asset", "dataset");
         List<String> list = new ArrayList<String>();
         list.add("name");
         list.add("age");

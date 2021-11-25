@@ -64,7 +64,7 @@ public class ExampleProducer extends NoOpFlightProducer {
         final Runnable loadData = () -> {
             listener.setUseZeroCopy(true);
             listener.start(this.constVectorSchemaRoot);
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 100; i++) {
                 // System.out.println("Example putNext()");
                 listener.putNext();
             }

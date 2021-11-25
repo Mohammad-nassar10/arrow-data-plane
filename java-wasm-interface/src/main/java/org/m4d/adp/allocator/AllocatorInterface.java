@@ -19,11 +19,12 @@ public class AllocatorInterface {
 
     static{
         if (!WasmInterface.LOADED_EMBEDDED_LIBRARY) {
-            try {
-                NativeLoader.loadLibrary("wasm_interface");
-            } catch (IOException e) {
-                logger.error("AllocateInterface failed to load wasm_interface library: " + e.getMessage());
-            }
+            //try {
+                // NativeLoader.loadLibrary("wasm_interface");
+                System.loadLibrary("/home/mohammadtn/data-plane-integration/arrow-data-plane/wasm_interface/target/x86_64-unknown-linux-gnu/release/libwasm_interface.so");
+            //} catch (IOException e) {
+              //  logger.error("AllocateInterface failed to load wasm_interface library: " + e.getMessage());
+            //}
         }
     }
 
