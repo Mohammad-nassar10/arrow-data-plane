@@ -47,17 +47,17 @@ public class MyFlightClient {
             i++;
         }
         long finish = System.currentTimeMillis();
-        VarCharVector names = (VarCharVector) root.getVector(0);
-        BigIntVector ages = (BigIntVector) root.getVector(1);
-        VarCharVector streets = (VarCharVector) root.getVector(2);
-        VarCharVector countries = (VarCharVector) root.getVector(3);
+        // VarCharVector names = (VarCharVector) root.getVector(0);
+        // BigIntVector ages = (BigIntVector) root.getVector(1);
+        // VarCharVector streets = (VarCharVector) root.getVector(2);
+        // VarCharVector countries = (VarCharVector) root.getVector(3);
 
-        for (int j = 0; j < root.getRowCount(); j++) {
-            System.out.print(new String(names.get(j)) + ", ");
-            System.out.print(ages.get(j) + ", ");
-            System.out.print(new String(streets.get(j)) + ", ");
-            System.out.println(new String(countries.get(j)));
-        }
+        // for (int j = 0; j < root.getRowCount(); j++) {
+        //     System.out.print(new String(names.get(j)) + ", ");
+        //     System.out.print(ages.get(j) + ", ");
+        //     System.out.print(new String(streets.get(j)) + ", ");
+        //     System.out.println(new String(countries.get(j)));
+        // }
 
 
         System.out.println("Time spent traversing dataset: " + (finish - start)/1000.0 + " seconds");
